@@ -32,7 +32,7 @@ func Quantize(cb DCTColorBlock, factor float64) DCTColorBlock {
 		*v = make(DCTBlockOfImg, len(cb.Y))
 	}
 
-	lumq := ScaledQuantTable(LUM_TABLE, 100)
+	lumq := ScaledQuantTable(LUM_TABLE, factor)
 	chroq := ScaledQuantTable(CHRO_TABLE, factor)
 
 	for by := range cb.Y {

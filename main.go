@@ -8,12 +8,15 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		println("Usage: ./compress <input_image> <quality_factor>")
+	if len(os.Args) < 5 {
+		println("Usage: ./compress <input_image> <quality_factor> <x_loc> <y_loc>")
 	}
 
 	path := os.Args[1]
 	factor := os.Args[2]
+  atX := os.Args[3]
+  atY := os.Args[4]
+
 	// fetch image
 	file, err := os.Open(path)
 	if err != nil {
@@ -28,18 +31,28 @@ func main() {
 		return
 	}
 
+  x, _:= strconv.Atoi(atX)
+  y, _:= strconv.Atoi(atY)
+
 	// testing dct compression
 	block := imgToBlocks(img)
 	fmt.Println("original")
-	for _, v := range block.Y[0][0] {
+	for _, v := range block.Y[y][x] {
 		fmt.Println(v)
 	}
 
 	dctBlock := DctImg(block)
 	fmt.Println("dct")
-	for _, v := range dctBlock.Y[0][0] {
-		fmt.Println(v)
+	for _, v := range dctBlock.Y[y][x] {
+		fmt.Printf("%.3f\n",v)
 	}
+
+  fmt.Println()
+  total := energyDist(dctBlock.Y[y][x],8,8)
+  fmt.Println(total)
+  fmt.Println(energyDist(dctBlock.Y[y][x],3,3))
+  fmt.Println(energyDist(dctBlock.Y[y][x],0,0)/total)
+  fmt.Println()
 
 	factorF, err := strconv.ParseFloat(factor, 64)
 	if err != nil {
@@ -47,20 +60,28 @@ func main() {
 	}
 	quantBlock := Quantize(dctBlock, factorF)
 	fmt.Println("quant")
-	for _, v := range quantBlock.Y[0][0] {
+	for _, v := range quantBlock.Y[y][x] {
 		fmt.Println(v)
 	}
+
+  fmt.Println(spars(quantBlock,x,y))
 
 	idctBlock := IDctImg(quantBlock)
 	fmt.Println("idct")
-	for _, v := range idctBlock.Y[0][0] {
+	for _, v := range idctBlock.Y[y][x] {
 		fmt.Println(v)
 	}
 
+  mse := MSE(idctBlock,block,x,y)
+  fmt.Println(mse)
+  fmt.Println(PSNR(mse))
+
 	img = blocksToImg(idctBlock, scale)
 
+
+  name := fmt.Sprintf("output_%s.jpeg",factor)
 	// save image
-	out, err := os.Create("output.jpeg")
+	out, err := os.Create(name)
 	if err != nil {
 		fmt.Println("Error creating output file:", err.Error())
 		return
